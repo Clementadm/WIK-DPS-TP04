@@ -1,0 +1,119 @@
+## Partie 1
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: echo-image
+# spec:
+#   containers:
+#     - name: image-tp
+#       image: registry.cluster.wik.cloud/public/echo
+#       ports:
+#         - containerPort: 8080
+
+---
+# # Partie 2 : Réplicaset
+# apiVersion: apps/v1
+
+# kind: ReplicaSet
+# metadata:
+#   name: echo-image
+#   labels:
+#     # toto: tata
+#     etiquette: replicaset
+# spec:
+#   # modify replicas according to your case
+#   replicas: 4
+#   selector:
+#     matchLabels:
+#       # toto: toto
+#       etiquette: nosPods
+#   template:
+#     metadata:
+#       labels:
+#         # toto: toto
+#         etiquette: nosPods
+#     spec:
+#       containers:
+#         - name: image-tp
+#           image: registry.cluster.wik.cloud/public/echo
+#           ports:
+#             - containerPort: 8080
+# ---
+# # service
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: echo-service
+# spec:
+#   selector:
+#     # toto: toto
+#     etiquette: nosPods
+#   ports:
+#     - protocol: TCP
+#       port: 8080
+#       targetPort: 8080
+
+# Partie 3
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-deployment
+  labels:
+    etiquette: deployement
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      # toto: toto
+      etiquette: nosPods
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 50%
+
+  template:
+    metadata:
+      labels:
+        etiquette: nosPods
+    spec:
+      containers:
+        - name: image-tp
+          image: registry.cluster.wik.cloud/public/echo
+          ports:
+            - containerPort: 8080
+
+---
+# service
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-service
+spec:
+  selector:
+    # toto: toto
+    etiquette: nosPods
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: echo-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: production.app.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: echo-service
+                port:
+                  number: 8080
